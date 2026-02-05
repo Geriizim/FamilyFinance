@@ -19,6 +19,14 @@ En enkel, responsiv prototyp för att hantera familjens ekonomi lokalt på en Ub
    ```bash
    export DATABASE_URL="postgres://user:password@localhost:5432/familyfinance"
    ```
+   Om du saknar rättigheter i `public`-schemat kan du ange ett eget schema:
+   ```bash
+   export DB_SCHEMA="familyfinance"
+   ```
+   Vill du skapa tabellen manuellt kan du hoppa över auto-setup:
+   ```bash
+   export SKIP_SCHEMA_SETUP="true"
+   ```
 4. Starta servern (API + statiska filer):
    ```bash
    npm start
@@ -28,6 +36,9 @@ En enkel, responsiv prototyp för att hantera familjens ekonomi lokalt på en Ub
 ## Databas
 Servern skapar tabellen `transactions` automatiskt om den saknas. Synkningen görs via knappen
 \"Spara till databas\" eller automatiskt efter import/kategorisering.
+Om du ser felet `permission denied for schema public` behöver din databas-användare skapa objekt
+i schemat eller så sätter du `DB_SCHEMA` till ett schema du äger.
+Tips: kör `psql` som superuser och ge CREATE-rättighet på schema om du vill fortsätta använda `public`.
 
 ## Importformat
 Stöd för följande rubriker i Excel-filer:

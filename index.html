@@ -41,6 +41,17 @@
           <h2>Filter & överblick</h2>
           <div class="filters">
             <label>
+              Vy
+              <select id="view-select">
+                <option value="month">Månad</option>
+                <option value="year">Helår</option>
+              </select>
+            </label>
+            <label>
+              År
+              <select id="year-select"></select>
+            </label>
+            <label>
               Månad
               <select id="month-select"></select>
             </label>
@@ -53,6 +64,13 @@
               <select id="category-filter">
                 <option value="all">Alla</option>
               </select>
+            </label>
+            <label>
+              Lägg till kategori
+              <div class="inline-field">
+                <input id="category-input" type="text" placeholder="Ny kategori" />
+                <button id="add-category" class="secondary" type="button">Lägg till</button>
+              </div>
             </label>
           </div>
         </div>

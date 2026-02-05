@@ -6,15 +6,24 @@ const { Pool } = pg;
 
 const app = express();
 const port = process.env.PORT || 8080;
+const schema = process.env.DB_SCHEMA || 'public';
+const schemaIdentifier = schema === 'public' ? 'public' : `"${schema}"`;
+const qualifiedTable = `${schemaIdentifier}.transactions`;
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL
 });
 
 const ensureSchema = async () => {
+  if (process.env.SKIP_SCHEMA_SETUP === 'true') {
+    return;
+  }
   const client = await pool.connect();
   try {
+    if (schema !== 'public') {
+      await client.query(`CREATE SCHEMA IF NOT EXISTS ${schemaIdentifier};`);
+    }
     await client.query(`
-      CREATE TABLE IF NOT EXISTS transactions (
+      CREATE TABLE IF NOT EXISTS ${qualifiedTable} (
         id SERIAL PRIMARY KEY,
         fingerprint TEXT UNIQUE NOT NULL,
         transaction_date DATE NOT NULL,
@@ -28,6 +37,13 @@ const ensureSchema = async () => {
         updated_at TIMESTAMPTZ DEFAULT NOW()
       );
     `);
+  } catch (error) {
+    if (error?.code === '42501') {
+      console.error(
+        'Permission denied while setting up database schema. Grant CREATE on schema or set DB_SCHEMA to a schema you own.'
+      );
+    }
+    throw error;
   } finally {
     client.release();
   }
@@ -84,7 +100,7 @@ app.post('/api/transactions/bulk', async (req, res) => {
       .join(', ');
 
     const query = `
-      INSERT INTO transactions (
+      INSERT INTO ${qualifiedTable} (
         fingerprint,
         transaction_date,
         description,
@@ -127,7 +143,7 @@ app.get('/api/transactions', async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT id, transaction_date, description, amount, balance, category, currency, card_holder
-       FROM transactions
+       FROM ${qualifiedTable}
        ${whereClause}
        ORDER BY transaction_date DESC`,
       params

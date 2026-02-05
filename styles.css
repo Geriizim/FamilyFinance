@@ -156,6 +156,13 @@ button.secondary {
   flex-wrap: wrap;
 }
 
+.inline-field {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
 label {
   font-size: 0.85rem;
   color: var(--muted);
@@ -167,6 +174,14 @@ label {
 select,
 input[type="search"],
 input[type="number"] {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: white;
+  color: var(--text);
+}
+
+input[type="text"] {
   padding: 8px 12px;
   border-radius: 10px;
   border: 1px solid var(--border);

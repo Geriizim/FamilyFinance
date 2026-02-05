@@ -1,6 +1,8 @@
 const state = {
   transactions: [],
   selectedMonth: null,
+  selectedYear: null,
+  viewMode: 'month',
   categoryFilter: 'all',
   budgets: {},
   categories: [
@@ -34,9 +36,13 @@ const state = {
 
 const fileInput = document.getElementById('file-input');
 const demoButton = document.getElementById('demo-button');
+const viewSelect = document.getElementById('view-select');
+const yearSelect = document.getElementById('year-select');
 const monthSelect = document.getElementById('month-select');
 const searchInput = document.getElementById('search-input');
 const categoryFilter = document.getElementById('category-filter');
+const categoryInput = document.getElementById('category-input');
+const addCategoryButton = document.getElementById('add-category');
 const transactionBody = document.getElementById('transaction-body');
 const statsGrid = document.getElementById('stats-grid');
 const comparisonGrid = document.getElementById('comparison-grid');
@@ -164,6 +170,8 @@ const formatAmountClass = (value) => (value >= 0 ? 'stat-positive' : 'stat-negat
 
 const computeMonthKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 
+const computeYearKey = (date) => `${date.getFullYear()}`;
+
 const getMonthRange = (transactions) => {
   const months = Array.from(
     new Set(transactions.map((item) => computeMonthKey(item.date)))
@@ -171,8 +179,23 @@ const getMonthRange = (transactions) => {
   return months;
 };
 
+const getYearRange = (transactions) => {
+  const years = Array.from(new Set(transactions.map((item) => computeYearKey(item.date)))).sort();
+  return years;
+};
+
 const updateFilters = () => {
   const months = getMonthRange(state.transactions);
+  const years = getYearRange(state.transactions);
+  yearSelect.innerHTML = '';
+  years.forEach((year) => {
+    yearSelect.append(createOption(year, year));
+  });
+  if (!state.selectedYear && years.length) {
+    state.selectedYear = years[years.length - 1];
+  }
+  yearSelect.value = state.selectedYear || '';
+
   monthSelect.innerHTML = '';
   months.forEach((month) => {
     const [year, monthIndex] = month.split('-').map(Number);
@@ -183,6 +206,7 @@ const updateFilters = () => {
     state.selectedMonth = months[months.length - 1];
   }
   monthSelect.value = state.selectedMonth || '';
+  monthSelect.disabled = state.viewMode !== 'month';
 
   categoryFilter.innerHTML = '';
   categoryFilter.append(createOption('all', 'Alla'));
@@ -194,12 +218,16 @@ const updateFilters = () => {
 const getFilteredTransactions = () => {
   const searchValue = normalizeText(searchInput.value);
   return state.transactions.filter((item) => {
-    const matchesMonth = state.selectedMonth
-      ? computeMonthKey(item.date) === state.selectedMonth
+    const matchesYear = state.selectedYear
+      ? computeYearKey(item.date) === state.selectedYear
       : true;
+    const matchesMonth =
+      state.viewMode === 'month' && state.selectedMonth
+        ? computeMonthKey(item.date) === state.selectedMonth
+        : true;
     const matchesCategory = state.categoryFilter === 'all' || item.category === state.categoryFilter;
     const matchesSearch = !searchValue || normalizeText(item.description).includes(searchValue);
-    return matchesMonth && matchesCategory && matchesSearch;
+    return matchesYear && matchesMonth && matchesCategory && matchesSearch;
   });
 };
 
@@ -240,38 +268,71 @@ const renderStats = () => {
 const getMonthTransactions = (monthKey) =>
   state.transactions.filter((item) => computeMonthKey(item.date) === monthKey);
 
+const getYearTransactions = (yearKey) =>
+  state.transactions.filter((item) => computeYearKey(item.date) === yearKey);
+
 const renderComparisons = () => {
-  if (!state.selectedMonth) {
-    comparisonGrid.innerHTML = '';
-    return;
-  }
-  const [year, month] = state.selectedMonth.split('-').map(Number);
-  const currentItems = getMonthTransactions(state.selectedMonth);
-  const previousMonthDate = new Date(year, month - 2, 1);
-  const previousMonthKey = computeMonthKey(previousMonthDate);
-  const previousYearKey = `${year - 1}-${String(month).padStart(2, '0')}`;
-
-  const currentTotals = computeTotals(currentItems);
-  const prevMonthTotals = computeTotals(getMonthTransactions(previousMonthKey));
-  const prevYearTotals = computeTotals(getMonthTransactions(previousYearKey));
-
-  const cards = [
-    {
-      title: 'Månad / Månad',
-      value: currentTotals.expenses - prevMonthTotals.expenses,
-      description: `Jämfört med ${monthFormatter.format(previousMonthDate)}`
-    },
-    {
-      title: 'År / År',
-      value: currentTotals.expenses - prevYearTotals.expenses,
-      description: `Jämfört med ${monthFormatter.format(new Date(year - 1, month - 1, 1))}`
-    },
-    {
-      title: 'Netto-utveckling',
-      value: currentTotals.net - prevMonthTotals.net,
-      description: 'Skillnad mot föregående månad'
+  let cards = [];
+  if (state.viewMode === 'month') {
+    if (!state.selectedMonth) {
+      comparisonGrid.innerHTML = '';
+      return;
     }
-  ];
+    const [year, month] = state.selectedMonth.split('-').map(Number);
+    const currentItems = getMonthTransactions(state.selectedMonth);
+    const previousMonthDate = new Date(year, month - 2, 1);
+    const previousMonthKey = computeMonthKey(previousMonthDate);
+    const previousYearKey = `${year - 1}-${String(month).padStart(2, '0')}`;
+
+    const currentTotals = computeTotals(currentItems);
+    const prevMonthTotals = computeTotals(getMonthTransactions(previousMonthKey));
+    const prevYearTotals = computeTotals(getMonthTransactions(previousYearKey));
+
+    cards = [
+      {
+        title: 'Månad / Månad',
+        value: currentTotals.expenses - prevMonthTotals.expenses,
+        description: `Jämfört med ${monthFormatter.format(previousMonthDate)}`
+      },
+      {
+        title: 'År / År',
+        value: currentTotals.expenses - prevYearTotals.expenses,
+        description: `Jämfört med ${monthFormatter.format(new Date(year - 1, month - 1, 1))}`
+      },
+      {
+        title: 'Netto-utveckling',
+        value: currentTotals.net - prevMonthTotals.net,
+        description: 'Skillnad mot föregående månad'
+      }
+    ];
+  } else {
+    if (!state.selectedYear) {
+      comparisonGrid.innerHTML = '';
+      return;
+    }
+    const currentItems = getYearTransactions(state.selectedYear);
+    const previousYearKey = `${Number(state.selectedYear) - 1}`;
+    const prevYearItems = getYearTransactions(previousYearKey);
+    const currentTotals = computeTotals(currentItems);
+    const prevYearTotals = computeTotals(prevYearItems);
+    cards = [
+      {
+        title: 'År / År',
+        value: currentTotals.expenses - prevYearTotals.expenses,
+        description: `Jämfört med ${previousYearKey}`
+      },
+      {
+        title: 'Inkomstförändring',
+        value: currentTotals.income - prevYearTotals.income,
+        description: `Jämfört med ${previousYearKey}`
+      },
+      {
+        title: 'Netto-utveckling',
+        value: currentTotals.net - prevYearTotals.net,
+        description: 'Skillnad mot föregående år'
+      }
+    ];
+  }
 
   comparisonGrid.innerHTML = '';
   cards.forEach((card) => {
@@ -336,6 +397,15 @@ const buildInsights = (items) => {
   ];
 };
 
+const getBudgetPeriodLabel = (period) => (period === 'year' ? 'år' : 'månad');
+
+const getPeriodTotals = (period) => {
+  if (period === 'year') {
+    return computeCategoryTotals(getYearTransactions(state.selectedYear));
+  }
+  return computeCategoryTotals(getFilteredTransactions());
+};
+
 const renderInsights = () => {
   const filtered = getFilteredTransactions();
   const cards = buildInsights(filtered);
@@ -355,23 +425,30 @@ const renderInsights = () => {
 };
 
 const renderBudgets = () => {
-  const filtered = getFilteredTransactions();
-  const totals = computeCategoryTotals(filtered);
+  const totals = getPeriodTotals('month');
+  const yearlyTotals = getPeriodTotals('year');
   budgetGrid.innerHTML = '';
 
   state.categories.forEach((category) => {
-    const value = totals[category] || 0;
-    const budget = state.budgets[category] || 0;
+    const budgetConfig = state.budgets[category] || { period: 'month', amount: 0 };
+    const value = budgetConfig.period === 'year' ? yearlyTotals[category] || 0 : totals[category] || 0;
+    const budget = budgetConfig.amount || 0;
     const percent = budget ? Math.min(Math.abs(value / budget) * 100, 100) : 0;
 
     const card = document.createElement('div');
     card.className = 'budget-card';
     card.innerHTML = `
       <h3>${category}</h3>
-      <p>${currencyFormatter.format(value)} / ${budget ? currencyFormatter.format(budget) : 'Ingen budget'}</p>
+      <p>${currencyFormatter.format(value)} / ${budget ? currencyFormatter.format(budget) : 'Ingen budget'} (${getBudgetPeriodLabel(budgetConfig.period)})</p>
       <label>
         Budget
-        <input type="number" min="0" value="${budget || ''}" data-category="${category}" placeholder="t.ex. 5000" />
+        <div class="inline-field">
+          <select data-category="${category}" data-kind="period">
+            <option value="month" ${budgetConfig.period === 'month' ? 'selected' : ''}>Månad</option>
+            <option value="year" ${budgetConfig.period === 'year' ? 'selected' : ''}>År</option>
+          </select>
+          <input type="number" min="0" value="${budget || ''}" data-category="${category}" data-kind="amount" placeholder="t.ex. 5000" />
+        </div>
       </label>
       <div class="progress"><span style="width: ${percent}%;"></span></div>
     `;
@@ -381,7 +458,17 @@ const renderBudgets = () => {
   budgetGrid.querySelectorAll('input[type="number"]').forEach((input) => {
     input.addEventListener('change', (event) => {
       const { category } = event.target.dataset;
-      state.budgets[category] = Number(event.target.value);
+      const existing = state.budgets[category] || { period: 'month', amount: 0 };
+      state.budgets[category] = { ...existing, amount: Number(event.target.value) };
+      renderBudgets();
+    });
+  });
+
+  budgetGrid.querySelectorAll('select[data-kind="period"]').forEach((select) => {
+    select.addEventListener('change', (event) => {
+      const { category } = event.target.dataset;
+      const existing = state.budgets[category] || { period: 'month', amount: 0 };
+      state.budgets[category] = { ...existing, period: event.target.value };
       renderBudgets();
     });
   });
@@ -488,12 +575,32 @@ monthSelect.addEventListener('change', (event) => {
   renderAll();
 });
 
+yearSelect.addEventListener('change', (event) => {
+  state.selectedYear = event.target.value;
+  renderAll();
+});
+
+viewSelect.addEventListener('change', (event) => {
+  state.viewMode = event.target.value;
+  renderAll();
+});
+
 searchInput.addEventListener('input', () => {
   renderAll();
 });
 
 categoryFilter.addEventListener('change', (event) => {
   state.categoryFilter = event.target.value;
+  renderAll();
+});
+
+addCategoryButton.addEventListener('click', () => {
+  const newCategory = categoryInput.value.trim();
+  if (!newCategory || state.categories.includes(newCategory)) {
+    return;
+  }
+  state.categories.push(newCategory);
+  categoryInput.value = '';
   renderAll();
 });
 

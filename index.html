@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="sv">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FamilyFinance</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script defer src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">FamilyFinance</p>
+        <h1>Familjens ekonomi på ett ställe</h1>
+        <p class="subtitle">
+          Ladda upp transaktionsfiler, kategorisera smart och få överblick över budget, månad och år.
+        </p>
+      </div>
+      <div class="header-actions">
+        <div class="sync-status" id="sync-status">
+          <span class="status-dot" aria-hidden="true"></span>
+          <div>
+            <p>Databas: <strong id="sync-label">Ej synkad</strong></p>
+            <small id="sync-meta">Ingen export ännu</small>
+          </div>
+        </div>
+        <label class="file-upload" for="file-input">
+          <span>📥</span>
+          Ladda upp Excel
+        </label>
+        <input id="file-input" type="file" accept=".xlsx,.xls" />
+        <button id="demo-button" class="secondary">Använd demo-data</button>
+        <button id="sync-button" class="secondary">Spara till databas</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Filter & överblick</h2>
+          <div class="filters">
+            <label>
+              Månad
+              <select id="month-select"></select>
+            </label>
+            <label>
+              Kategori
+              <select id="category-filter">
+                <option value="all">Alla</option>
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div class="stats-grid" id="stats-grid"></div>
+
+        <div class="comparison-grid" id="comparison-grid"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Budget per kategori</h2>
+          <p class="subtitle">Sätt mål för månaden och följ upp i realtid.</p>
+        </div>
+        <div class="budget-grid" id="budget-grid"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-header">
+          <h2>Transaktioner</h2>
+          <div class="panel-actions">
+            <label class="toggle">
+              <input id="apply-similar" type="checkbox" checked />
+              Kategorisera liknande automatiskt
+            </label>
+          </div>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Datum</th>
+                <th>Text / Inköpsställe</th>
+                <th>Belopp</th>
+                <th>Kategori</th>
+                <th>Saldo</th>
+              </tr>
+            </thead>
+            <tbody id="transaction-body"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Tips: Kör lösningen på Ubuntu genom att servera statiska filer, t.ex. <code>python3 -m http.server 8080</code>.</p>
+    </footer>
+  </body>
+</html>

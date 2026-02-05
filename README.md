@@ -43,8 +43,6 @@ Tips: kör `psql` som superuser och ge CREATE-rättighet på schema om du vill f
 ## Importformat
 Stöd för följande rubriker i Excel-filer:
 
-Tips: du kan kombinera filer från flera banker så länge rubrikerna matchar listan nedan.
-
 ```
 Reskontradatum  Transaktionsdatum  Text  Belopp  Saldo
 ```

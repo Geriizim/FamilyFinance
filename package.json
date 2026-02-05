@@ -1,0 +1,14 @@
+{
+  "name": "familyfinance",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Local FamilyFinance dashboard with PostgreSQL persistence",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "pg": "^8.11.5"
+  }
+}
